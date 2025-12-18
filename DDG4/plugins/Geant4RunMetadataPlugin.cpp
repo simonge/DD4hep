@@ -32,6 +32,8 @@
 #include <vector>
 #include <map>
 #include <memory>
+#include <mutex>
+#include <cmath>
 
 using namespace dd4hep::sim;
 using namespace dd4hep;
@@ -61,7 +63,9 @@ namespace dd4hep {
       
       /// Get the singleton instance for a given detector
       static RunMetadataStore& instance(Detector& detector) {
+        static std::mutex s_mutex;
         static std::map<Detector*, std::shared_ptr<RunMetadataStore>> stores;
+        std::lock_guard<std::mutex> lock(s_mutex);
         auto it = stores.find(&detector);
         if (it == stores.end()) {
           auto store = std::make_shared<RunMetadataStore>();
@@ -86,6 +90,8 @@ namespace dd4hep {
     };
 
     /// Helper class to access protected members of ExtensionParameters
+    /// This is a standard C++ pattern for accessing protected members from derived classes
+    /// within the same namespace, used to avoid modifying the base ExtensionParameters class
     namespace {
       class RunParamsAccessor : public RunParameters {
       public:
@@ -245,7 +251,7 @@ namespace  {
    *  references to constants and units (e.g., "250.0*GeV", "DetectorVersion").
    *  
    *  \author M.Frank
-   *  \date   18.12.2024
+   *  \date   2024
    */
   long configure_run_metadata(Detector& detector, xml_h e)   {
     xml_comp_t c = e;
@@ -286,9 +292,9 @@ namespace  {
           // For string type, use the value directly (no evaluation)
           p.strValue = valueStr;
         } else if (p.type == "int") {
-          // For int type, evaluate as expression and convert to int
+          // For int type, evaluate as expression and convert to int with rounding
           p.dblValue = xml::_toDouble(valueStr.c_str());
-          p.intValue = static_cast<int>(p.dblValue);
+          p.intValue = static_cast<int>(std::round(p.dblValue));
         } else if (p.type == "float") {
           // For float type, evaluate as expression
           p.dblValue = xml::_toDouble(valueStr.c_str());

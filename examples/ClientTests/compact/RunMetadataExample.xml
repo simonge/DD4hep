@@ -63,7 +63,7 @@
       
       <!-- Detector configuration -->
       <parameter name="DetectorVersion" type="string" 
-                 value="ILD_l5_v02"/>
+                 value="DetectorVersion"/>
       <parameter name="MagneticField" type="float" 
                  value="MagneticField/tesla"/>
     </plugin>
@@ -71,7 +71,7 @@
     <!-- Example: File-level metadata -->
     <plugin name="DD4hep_RunMetadata" type="metadata">
       <parameter name="GeometryVersion" type="string" 
-                 value="ILD_l5_v02"/>
+                 value="DetectorVersion"/>
     </plugin>
   </plugins>
 

@@ -36,6 +36,8 @@ lib/
 /include
 /python/
 build/
+build_*/
+_codeql_detected_source_root
 
 # CMake config files
 *Config.cmake

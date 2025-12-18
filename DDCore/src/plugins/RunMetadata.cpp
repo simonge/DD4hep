@@ -15,39 +15,18 @@
 #include <DD4hep/DetFactoryHelper.h>
 #include <DD4hep/Printout.h>
 #include <DD4hep/Plugins.h>
+#include <DDG4/RunMetadataStore.h>
 #include <XML/DocumentHandler.h>
 #include <XML/Utilities.h>
 
 // C/C++ include files
-#include <map>
 #include <string>
 
 /// Do not clutter global namespace
 namespace  {
 
   using namespace dd4hep;
-
-  /// Helper class to store metadata in the Detector instance
-  class RunMetadataStore {
-  public:
-    struct Parameter {
-      std::string name;
-      std::string type;  // "int", "float", or "string"
-      std::string constantName;
-      std::string unit;
-      std::string branch;  // "runs", "metadata", or "events"
-    };
-    
-    std::vector<Parameter> parameters;
-    
-    static RunMetadataStore& instance(Detector& detector) {
-      static std::map<Detector*, RunMetadataStore*> stores;
-      if (stores.find(&detector) == stores.end()) {
-        stores[&detector] = new RunMetadataStore();
-      }
-      return *stores[&detector];
-    }
-  };
+  using namespace dd4hep::sim;
 
   /// Plugin to configure metadata from XML
   /** Plugin to store metadata configuration from compact XML files.

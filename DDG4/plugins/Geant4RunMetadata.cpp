@@ -20,6 +20,7 @@
 #include <DDG4/RunParameters.h>
 #include <DDG4/EventParameters.h>
 #include <DDG4/FileParameters.h>
+#include <DDG4/RunMetadataStore.h>
 #include <DDG4/Factories.h>
 
 // Geant4 headers
@@ -28,29 +29,12 @@
 // C/C++ include files
 #include <string>
 #include <vector>
-#include <map>
 
 using namespace dd4hep::sim;
 using namespace dd4hep;
 
 namespace dd4hep {
   namespace sim {
-
-    /// Forward declaration of metadata store
-    class RunMetadataStore {
-    public:
-      struct Parameter {
-        std::string name;
-        std::string type;
-        std::string constantName;
-        std::string unit;
-        std::string branch;
-      };
-      
-      std::vector<Parameter> parameters;
-      
-      static RunMetadataStore& instance(Detector& detector);
-    };
 
     /// Helper class to access protected members of ExtensionParameters
     namespace {
@@ -170,7 +154,12 @@ namespace dd4hep {
               }
               applyToFileParameters(fileParams, param, description, unitValue);
             }
-            // Note: event parameters would be handled in event action, not run action
+            else if (param.branch == "events") {
+              // Event parameters require an event action, which is not implemented yet
+              // This would require a separate Geant4EventAction to apply event-level metadata
+              warning("Event-level metadata (branch='events') is not yet supported. "
+                      "Parameter '%s' will be ignored.", param.name.c_str());
+            }
             
           } catch (std::exception& e) {
             error("Failed to apply metadata parameter '%s': %s", 
@@ -241,18 +230,6 @@ namespace dd4hep {
 
   }  // End namespace sim
 }    // End namespace dd4hep
-
-// Define the singleton accessor for the store (needed by both plugins)
-namespace {
-  std::map<dd4hep::Detector*, dd4hep::sim::RunMetadataStore*> g_stores;
-}
-
-dd4hep::sim::RunMetadataStore& dd4hep::sim::RunMetadataStore::instance(dd4hep::Detector& detector) {
-  if (g_stores.find(&detector) == g_stores.end()) {
-    g_stores[&detector] = new RunMetadataStore();
-  }
-  return *g_stores[&detector];
-}
 
 // Factory declaration
 DECLARE_GEANT4ACTION(Geant4RunMetadata)

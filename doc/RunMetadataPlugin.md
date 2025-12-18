@@ -92,7 +92,9 @@ The plugin tag's `type` attribute specifies where the metadata is stored:
 
 - **`"runs"`** (default) - Run-level metadata (stored once per run)
 - **`"metadata"`** - File-level metadata (stored once per file)
-- **`"events"`** - Event-level metadata (stored for each event)
+- **`"events"`** - Event-level metadata (currently not supported)
+
+**Note:** Event-level metadata requires a Geant4 event action and is not yet implemented. If you need event-level metadata, please use the command-line approach with DDSim's `--meta.eventParameters`.
 
 You can use multiple plugin blocks to configure different branches:
 

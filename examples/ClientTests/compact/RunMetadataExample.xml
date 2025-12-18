@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lccdd>
+<!-- #==========================================================================
+     #  AIDA Detector description implementation 
+     #==========================================================================
+     # Copyright (C) Organisation europeenne pour la Recherche nucleaire (CERN)
+     # All rights reserved.
+     #
+     # For the licensing terms see $DD4hepINSTALL/LICENSE.
+     # For the list of contributors see $DD4hepINSTALL/doc/CREDITS.
+     #
+     #==========================================================================
+     # Example demonstrating the DD4hep_RunMetadata plugin
+     #
+     # This plugin allows metadata to be defined in the compact XML file
+     # and automatically inserted into Geant4 output files (EDM4hep/LCIO/ROOT).
+     #
+     # Usage:
+     # 1. Define constants in the compact file
+     # 2. Use the DD4hep_RunMetadata plugin to map constants to metadata parameters
+     # 3. The Geant4RunMetadata action will automatically apply these at runtime
+     #
+     # The plugin tag's "type" attribute specifies the metadata branch:
+     #   - "runs" for run-level metadata (default)
+     #   - "metadata" for file-level metadata
+     #   - "events" for event-level metadata
+     #==========================================================================
+-->
+
+  <info name="RunMetadataExample"
+        title="Example of Run Metadata Plugin"
+        author="DD4hep Project"
+        url="http://dd4hep.cern.ch"
+        status="development"
+        version="1.0">
+    <comment>Example demonstrating metadata insertion from XML</comment>        
+  </info>
+
+  <!-- Define constants that will be used for metadata -->
+  <define>
+    <constant name="ElectronBeamEnergy" value="250.0*GeV"/>
+    <constant name="PositronBeamEnergy" value="250.0*GeV"/>
+    <constant name="ColliderEnergy" value="500.0*GeV"/>
+    <constant name="BunchCrossing" value="554*ns"/>
+    <constant name="DetectorVersion" value="'ILD_l5_v02'"/>
+    <constant name="MagneticField" value="3.5*tesla"/>
+  </define>
+
+  <!-- Configure run-level metadata -->
+  <plugins>
+    <plugin name="DD4hep_RunMetadata" type="runs">
+      <!-- Beam parameters -->
+      <parameter name="BeamEnergy_electron" type="float" 
+                 constant="ElectronBeamEnergy" unit="GeV"/>
+      <parameter name="BeamEnergy_positron" type="float" 
+                 constant="PositronBeamEnergy" unit="GeV"/>
+      <parameter name="ColliderEnergy" type="float" 
+                 constant="ColliderEnergy" unit="GeV"/>
+      
+      <!-- Timing parameters -->
+      <parameter name="BunchCrossing" type="float" 
+                 constant="BunchCrossing" unit="ns"/>
+      
+      <!-- Detector configuration -->
+      <parameter name="DetectorVersion" type="string" 
+                 constant="DetectorVersion"/>
+      <parameter name="MagneticField" type="float" 
+                 constant="MagneticField" unit="tesla"/>
+    </plugin>
+    
+    <!-- Example: File-level metadata -->
+    <plugin name="DD4hep_RunMetadata" type="metadata">
+      <parameter name="GeometryVersion" type="string" 
+                 constant="DetectorVersion"/>
+    </plugin>
+  </plugins>
+
+</lccdd>

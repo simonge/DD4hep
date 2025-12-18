@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Example XML configuration demonstrating the Geant4MetadataAction plugin
+  
+  This plugin allows metadata to be inserted from XML into the Geant4 metadata
+  collections (e.g. "runs"/"metadata"). It follows the same concept as the 
+  command line approach (e.g. --meta.runParameters "BeamEnergy_electron/F=ElectronBeamEnergy/GeV").
+  
+  Usage:
+  The plugin is added to the RunAction phase and configured with runParameters property.
+  Each parameter specification has the format: ParameterName/Type=ConstantName[/Unit]
+  
+  Where:
+    - ParameterName: Name to store in the output metadata
+    - Type: Data type (I=int, F=float, C=string)
+    - ConstantName: Name of the constant in the detector description
+    - Unit (optional): Unit to divide the constant value by (e.g., GeV, mm)
+  
+  Multiple parameters can be specified separated by commas.
+-->
+<geant4_setup>
+  
+  <!-- Define some constants that will be used for metadata -->
+  <define>
+    <constant name="ElectronBeamEnergy" value="250.0*GeV"/>
+    <constant name="PositronBeamEnergy" value="250.0*GeV"/>
+    <constant name="ColliderEnergy" value="500.0*GeV"/>
+    <constant name="BunchCrossing" value="554*ns"/>
+    <constant name="DetectorVersion" value="'ILD_l5_v02'"/>
+  </define>
+  
+  <!-- Kernel parameters -->
+  <kernel UI="" NumEvents="10" />
+  
+  <!-- List of globally known actions -->
+  <actions>
+    <!-- Metadata action to insert constants into run parameters -->
+    <action name="Geant4MetadataAction/MetadataAction">
+      <properties runParameters="BeamEnergy_electron/F=ElectronBeamEnergy/GeV,BeamEnergy_positron/F=PositronBeamEnergy/GeV,ColliderEnergy/F=ColliderEnergy/GeV,BunchCrossing/F=BunchCrossing/ns,DetectorVersion/C=DetectorVersion"/>
+    </action>
+  </actions>
+  
+  <!-- List of known phases -->
+  <phases>
+    <phase type="RunAction/begin">
+      <!-- Add the metadata action to the run phase -->
+      <action name="MetadataAction"/>
+    </phase>
+  </phases>
+  
+  <!-- Example generator and output configuration -->
+  <sequences>
+    <sequence name="Geant4GeneratorActionSequence/GeneratorAction">
+      <action name="Geant4ParticleGun/Gun">
+        <properties energy="10*GeV" particle="'e-'" multiplicity="1"/>
+      </action>
+      <action name="Geant4PrimaryHandler/PrimaryHandler"/>
+    </sequence>
+    
+    <sequence name="Geant4EventActionSequence/EventAction">
+      <!-- Example: EDM4hep output will include the metadata -->
+      <!-- <action name="Geant4Output2EDM4hep/EDM4hepOutput"> -->
+      <!--   <properties Output="output.root"/> -->
+      <!-- </action> -->
+    </sequence>
+  </sequences>
+  
+</geant4_setup>

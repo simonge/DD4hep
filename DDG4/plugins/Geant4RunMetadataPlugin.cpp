@@ -88,7 +88,8 @@ namespace dd4hep {
           
           Geant4Kernel* kernel = &Geant4Kernel::instance(detector);
           if (kernel) {
-            Geant4RunMetadata* action = new Geant4RunMetadata(kernel, "Geant4RunMetadata");
+            Geant4Context* context = kernel->workerContext();
+            Geant4RunMetadata* action = new Geant4RunMetadata(context, "Geant4RunMetadata");
             kernel->registerGlobalAction(action);
             kernel->runAction().adopt(action);
             store.autoRegister = false;  // Only register once
@@ -360,8 +361,6 @@ namespace  {
     
     return 1;
   }
-  
-}  // End anonymous namespace
 
   /// Apply plugin to manually trigger action registration
   /** This plugin can be called from Geant4 setup to ensure the action is registered.
@@ -376,7 +375,7 @@ namespace  {
     RunMetadataStore::tryAutoRegister(detector);
     return 1;
   }
-
+  
 }  // End anonymous namespace
 
 // Factory declarations

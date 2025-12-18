@@ -11,30 +11,32 @@ The system consists of two parts:
 1. **DD4hep_RunMetadata** - A DD4hep plugin that reads metadata configuration from compact XML files during detector construction
 2. **Geant4RunMetadata** - A Geant4 action that applies the configured metadata to output files during simulation
 
+Both components are implemented in a single file: `DDG4/plugins/Geant4RunMetadataPlugin.cpp`
+
 ## Usage
 
 ### 1. Define Metadata in Compact XML
 
-In your detector description XML file, define constants and configure metadata using the `DD4hep_RunMetadata` plugin:
+In your detector description XML file, configure metadata using the `DD4hep_RunMetadata` plugin:
 
 ```xml
 <lccdd>
-  <!-- Define constants -->
+  <!-- Define constants (optional) -->
   <define>
     <constant name="ElectronBeamEnergy" value="250.0*GeV"/>
     <constant name="ColliderEnergy" value="500.0*GeV"/>
-    <constant name="DetectorVersion" value="'ILD_l5_v02'"/>
   </define>
 
   <!-- Configure metadata -->
   <plugins>
     <plugin name="DD4hep_RunMetadata" type="runs">
+      <!-- Values are evaluated as DD4hep expressions -->
       <parameter name="BeamEnergy_electron" type="float" 
-                 constant="ElectronBeamEnergy" unit="GeV"/>
+                 value="ElectronBeamEnergy/GeV"/>
       <parameter name="ColliderEnergy" type="float" 
-                 constant="ColliderEnergy" unit="GeV"/>
+                 value="ColliderEnergy/GeV"/>
       <parameter name="DetectorVersion" type="string" 
-                 constant="DetectorVersion"/>
+                 value="ILD_l5_v02"/>
     </plugin>
   </plugins>
 </lccdd>
@@ -83,8 +85,13 @@ Each `<parameter>` tag has the following attributes:
 
 - **name** (required): Name of the parameter in the output metadata
 - **type** (required): Data type - `"int"`, `"float"`, or `"string"`
-- **constant** (required): Name of the constant defined in the detector description
-- **unit** (optional): Unit to divide the constant value by (e.g., `"GeV"`, `"mm"`, `"ns"`)
+- **value** (required): Value as a DD4hep expression that will be evaluated
+
+The `value` attribute is evaluated using DD4hep's expression evaluator, which supports:
+- Constants defined in the detector description
+- Mathematical expressions (e.g., `"250.0*GeV"`, `"10+5"`)
+- Unit divisions (e.g., `"ElectronBeamEnergy/GeV"`)
+- For string types, the value is used directly without evaluation
 
 ## Metadata Branches
 
@@ -92,9 +99,6 @@ The plugin tag's `type` attribute specifies where the metadata is stored:
 
 - **`"runs"`** (default) - Run-level metadata (stored once per run)
 - **`"metadata"`** - File-level metadata (stored once per file)
-- **`"events"`** - Event-level metadata (currently not supported)
-
-**Note:** Event-level metadata requires a Geant4 event action and is not yet implemented. If you need event-level metadata, please use the command-line approach with DDSim's `--meta.eventParameters`.
 
 You can use multiple plugin blocks to configure different branches:
 
@@ -102,12 +106,12 @@ You can use multiple plugin blocks to configure different branches:
 <plugins>
   <!-- Run-level metadata -->
   <plugin name="DD4hep_RunMetadata" type="runs">
-    <parameter name="BeamEnergy" type="float" constant="BeamEnergy" unit="GeV"/>
+    <parameter name="BeamEnergy" type="float" value="250.0*GeV"/>
   </plugin>
   
   <!-- File-level metadata -->
   <plugin name="DD4hep_RunMetadata" type="metadata">
-    <parameter name="GeometryVersion" type="string" constant="DetectorVersion"/>
+    <parameter name="GeometryVersion" type="string" value="ILD_l5_v02"/>
   </plugin>
 </plugins>
 ```
@@ -117,41 +121,46 @@ You can use multiple plugin blocks to configure different branches:
 ### Integer Parameters
 
 ```xml
-<parameter name="NumberOfLayers" type="int" constant="NumberOfLayers"/>
+<parameter name="NumberOfLayers" type="int" value="12"/>
+<!-- or with expression -->
+<parameter name="LayerCount" type="int" value="NumberOfLayers*2"/>
 ```
 
-Stored as integer values. The constant can be defined as either integer or floating-point.
+The value is evaluated as a mathematical expression and converted to an integer.
 
 ### Float Parameters
 
 ```xml
-<parameter name="BeamEnergy" type="float" constant="BeamEnergy" unit="GeV"/>
+<parameter name="BeamEnergy" type="float" value="250.0*GeV"/>
+<!-- or with unit division -->
+<parameter name="Energy_GeV" type="float" value="ElectronBeamEnergy/GeV"/>
 ```
 
-Stored as single-precision floating-point values. Unit conversion is applied if specified.
+The value is evaluated as a mathematical expression and stored as a float.
 
 ### String Parameters
 
 ```xml
-<parameter name="DetectorVersion" type="string" constant="DetectorVersion"/>
+<parameter name="DetectorVersion" type="string" value="ILD_l5_v02"/>
 ```
 
-Stored as string values. The constant must be defined with quotes in the XML:
+For string parameters, the value is used directly without expression evaluation.
+
+## Expression Evaluation
+
+Values are evaluated using DD4hep's built-in expression evaluator, which supports:
+
+- **Constants**: References to constants defined in `<define>` sections
+- **Mathematical operations**: `+`, `-`, `*`, `/`, `(`, `)`
+- **Units**: Standard DD4hep units (GeV, mm, ns, tesla, degree, etc.)
+- **Unit conversions**: Use division for unit conversion (e.g., `"250.0*GeV/GeV"` = `250.0`)
+
+Examples:
 ```xml
-<constant name="DetectorVersion" value="'ILD_l5_v02'"/>
+<parameter name="Energy" type="float" value="250.0*GeV"/>
+<parameter name="Distance" type="float" value="(10.0*mm + 5.0*cm)/mm"/>
+<parameter name="Angle" type="float" value="90.0*degree"/>
 ```
-
-## Unit Conversion
-
-When a `unit` attribute is specified, the plugin:
-
-1. Looks up the unit constant in the detector description
-2. Divides the parameter value by the unit value
-3. Stores the result
-
-For example, if `BeamEnergy = 250.0*GeV` and unit is `GeV`, the stored value will be `250.0`.
-
-Standard DD4hep units (GeV, mm, ns, tesla, etc.) are automatically available.
 
 ## Output Format Integration
 
@@ -202,6 +211,7 @@ See the following files for complete examples:
 
 - **Compact XML**: `examples/ClientTests/compact/RunMetadataExample.xml`
 - **Geant4 Setup**: `examples/DDG4/compact/RunMetadataExample.xml`
+- **Plugin Implementation**: `DDG4/plugins/Geant4RunMetadataPlugin.cpp`
 
 ### Basic Setup
 
@@ -214,7 +224,8 @@ See the following files for complete examples:
   
   <plugins>
     <plugin name="DD4hep_RunMetadata" type="runs">
-      <parameter name="Energy" type="float" constant="BeamEnergy" unit="GeV"/>
+      <!-- Value is evaluated: BeamEnergy/GeV = 10.0*GeV/GeV = 10.0 -->
+      <parameter name="Energy" type="float" value="BeamEnergy/GeV"/>
     </plugin>
   </plugins>
 </lccdd>
@@ -268,6 +279,15 @@ ddsim --meta.runParameters "BeamEnergy/F=250.0" ...
 **After:**
 Add to your detector XML:
 ```xml
+<plugins>
+  <plugin name="DD4hep_RunMetadata" type="runs">
+    <parameter name="BeamEnergy" type="float" value="250.0*GeV"/>
+  </plugin>
+</plugins>
+```
+
+Or reference a constant:
+```xml
 <define>
   <constant name="BeamEnergyConstant" value="250.0*GeV"/>
 </define>
@@ -275,7 +295,7 @@ Add to your detector XML:
 <plugins>
   <plugin name="DD4hep_RunMetadata" type="runs">
     <parameter name="BeamEnergy" type="float" 
-               constant="BeamEnergyConstant" unit="GeV"/>
+               value="BeamEnergyConstant/GeV"/>
   </plugin>
 </plugins>
 ```

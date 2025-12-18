@@ -49,29 +49,29 @@
   <!-- Configure run-level metadata -->
   <plugins>
     <plugin name="DD4hep_RunMetadata" type="runs">
-      <!-- Beam parameters -->
+      <!-- Beam parameters - values are evaluated expressions -->
       <parameter name="BeamEnergy_electron" type="float" 
-                 constant="ElectronBeamEnergy" unit="GeV"/>
+                 value="ElectronBeamEnergy/GeV"/>
       <parameter name="BeamEnergy_positron" type="float" 
-                 constant="PositronBeamEnergy" unit="GeV"/>
+                 value="PositronBeamEnergy/GeV"/>
       <parameter name="ColliderEnergy" type="float" 
-                 constant="ColliderEnergy" unit="GeV"/>
+                 value="ColliderEnergy/GeV"/>
       
       <!-- Timing parameters -->
       <parameter name="BunchCrossing" type="float" 
-                 constant="BunchCrossing" unit="ns"/>
+                 value="BunchCrossing/ns"/>
       
       <!-- Detector configuration -->
       <parameter name="DetectorVersion" type="string" 
-                 constant="DetectorVersion"/>
+                 value="ILD_l5_v02"/>
       <parameter name="MagneticField" type="float" 
-                 constant="MagneticField" unit="tesla"/>
+                 value="MagneticField/tesla"/>
     </plugin>
     
     <!-- Example: File-level metadata -->
     <plugin name="DD4hep_RunMetadata" type="metadata">
       <parameter name="GeometryVersion" type="string" 
-                 constant="DetectorVersion"/>
+                 value="ILD_l5_v02"/>
     </plugin>
   </plugins>
 

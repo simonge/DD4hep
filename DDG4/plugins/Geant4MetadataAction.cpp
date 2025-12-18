@@ -34,6 +34,42 @@ using namespace dd4hep;
 namespace dd4hep {
   namespace sim {
 
+    /// Helper functions to add parameters to RunParameters
+    /// These are in the same namespace and can access protected members through
+    /// pointer-to-member access pattern
+    namespace {
+      void addIntParameterToRun(RunParameters* params, const std::string& name, int value) {
+        // Access protected member through derived class trick
+        class RunParamsAccessor : public RunParameters {
+        public:
+          static void addInt(RunParameters* p, const std::string& n, int v) {
+            static_cast<RunParamsAccessor*>(p)->m_intValues[n] = {v};
+          }
+        };
+        RunParamsAccessor::addInt(params, name, value);
+      }
+      
+      void addFloatParameterToRun(RunParameters* params, const std::string& name, float value) {
+        class RunParamsAccessor : public RunParameters {
+        public:
+          static void addFloat(RunParameters* p, const std::string& n, float v) {
+            static_cast<RunParamsAccessor*>(p)->m_fltValues[n] = {v};
+          }
+        };
+        RunParamsAccessor::addFloat(params, name, value);
+      }
+      
+      void addStringParameterToRun(RunParameters* params, const std::string& name, const std::string& value) {
+        class RunParamsAccessor : public RunParameters {
+        public:
+          static void addString(RunParameters* p, const std::string& n, const std::string& v) {
+            static_cast<RunParamsAccessor*>(p)->m_strValues[n] = {v};
+          }
+        };
+        RunParamsAccessor::addString(params, name, value);
+      }
+    }
+
     /// Plugin to add metadata from XML configuration to run parameters
     /**
      * This plugin allows metadata to be inserted from XML into the Geant4 metadata
@@ -171,7 +207,7 @@ namespace dd4hep {
             if (spec.type == "I") {
               // Integer parameter
               int value = static_cast<int>(description.constant<double>(spec.constantName) / unitValue);
-              runParams->m_intValues[spec.outputName] = {value};
+              addIntParameterToRun(runParams, spec.outputName, value);
               info("  Added int parameter: %s = %d (from %s/%s)", 
                    spec.outputName.c_str(), value, spec.constantName.c_str(),
                    spec.unit.empty() ? "1" : spec.unit.c_str());
@@ -179,7 +215,7 @@ namespace dd4hep {
             else if (spec.type == "F") {
               // Float parameter
               float value = static_cast<float>(description.constant<double>(spec.constantName) / unitValue);
-              runParams->m_fltValues[spec.outputName] = {value};
+              addFloatParameterToRun(runParams, spec.outputName, value);
               info("  Added float parameter: %s = %f (from %s/%s)", 
                    spec.outputName.c_str(), value, spec.constantName.c_str(),
                    spec.unit.empty() ? "1" : spec.unit.c_str());
@@ -187,7 +223,7 @@ namespace dd4hep {
             else if (spec.type == "C") {
               // String parameter
               std::string value = description.constantAsString(spec.constantName);
-              runParams->m_strValues[spec.outputName] = {value};
+              addStringParameterToRun(runParams, spec.outputName, value);
               info("  Added string parameter: %s = %s (from %s)", 
                    spec.outputName.c_str(), value.c_str(), spec.constantName.c_str());
             }

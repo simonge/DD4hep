@@ -9,7 +9,7 @@ The plugin allows metadata to be inserted from XML (or Python) into the Geant4
 metadata collections. It follows the same concept as the command line approach
 (e.g. --meta.runParameters "BeamEnergy_electron/F=ElectronBeamEnergy/GeV").
 
-Author: GitHub Copilot
+Author: DD4hep Project
 """
 from __future__ import absolute_import, unicode_literals
 import logging

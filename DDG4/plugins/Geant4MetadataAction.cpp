@@ -7,7 +7,7 @@
 // For the licensing terms see $DD4hepINSTALL/LICENSE.
 // For the list of contributors see $DD4hepINSTALL/doc/CREDITS.
 //
-// Author     : GitHub Copilot
+// Author     : Generated for DD4hep
 //
 //==========================================================================
 
@@ -34,38 +34,32 @@ using namespace dd4hep;
 namespace dd4hep {
   namespace sim {
 
-    /// Helper functions to add parameters to RunParameters
-    /// These are in the same namespace and can access protected members through
-    /// pointer-to-member access pattern
+    /// Helper class to access protected members of RunParameters
+    /// This is a standard C++ pattern for accessing protected members from
+    /// non-derived classes within the same namespace
     namespace {
+      class RunParamsAccessor : public RunParameters {
+      public:
+        static void addInt(RunParameters* p, const std::string& n, int v) {
+          static_cast<RunParamsAccessor*>(p)->m_intValues[n] = {v};
+        }
+        static void addFloat(RunParameters* p, const std::string& n, float v) {
+          static_cast<RunParamsAccessor*>(p)->m_fltValues[n] = {v};
+        }
+        static void addString(RunParameters* p, const std::string& n, const std::string& v) {
+          static_cast<RunParamsAccessor*>(p)->m_strValues[n] = {v};
+        }
+      };
+      
       void addIntParameterToRun(RunParameters* params, const std::string& name, int value) {
-        // Access protected member through derived class trick
-        class RunParamsAccessor : public RunParameters {
-        public:
-          static void addInt(RunParameters* p, const std::string& n, int v) {
-            static_cast<RunParamsAccessor*>(p)->m_intValues[n] = {v};
-          }
-        };
         RunParamsAccessor::addInt(params, name, value);
       }
       
       void addFloatParameterToRun(RunParameters* params, const std::string& name, float value) {
-        class RunParamsAccessor : public RunParameters {
-        public:
-          static void addFloat(RunParameters* p, const std::string& n, float v) {
-            static_cast<RunParamsAccessor*>(p)->m_fltValues[n] = {v};
-          }
-        };
         RunParamsAccessor::addFloat(params, name, value);
       }
       
       void addStringParameterToRun(RunParameters* params, const std::string& name, const std::string& value) {
-        class RunParamsAccessor : public RunParameters {
-        public:
-          static void addString(RunParameters* p, const std::string& n, const std::string& v) {
-            static_cast<RunParamsAccessor*>(p)->m_strValues[n] = {v};
-          }
-        };
         RunParamsAccessor::addString(params, name, value);
       }
     }
@@ -93,7 +87,7 @@ namespace dd4hep {
      *
      * Multiple parameters can be specified separated by commas.
      *
-     * \author  GitHub Copilot
+     * \author  DD4hep Project
      * \version 1.0
      * \ingroup DD4HEP_SIMULATION
      */
@@ -153,15 +147,22 @@ namespace dd4hep {
       }
 
       /// Get unit value from the detector description
+      /// Handles both integer and floating-point constants
       double getUnitValue(const std::string& unitName, Detector& description) {
         if (unitName.empty()) {
           return 1.0;
         }
         try {
-          return description.constant<double>(unitName);
-        } catch (std::exception& e) {
-          warning("Unit '%s' not found in constants, using 1.0", unitName.c_str());
-          return 1.0;
+          // Try to get as double first (most common case)
+          return description.constantAsDouble(unitName);
+        } catch (...) {
+          // If that fails, might be defined as integer
+          try {
+            return static_cast<double>(description.constantAsLong(unitName));
+          } catch (std::exception& e) {
+            warning("Unit '%s' not found in constants, using 1.0", unitName.c_str());
+            return 1.0;
+          }
         }
       }
 
@@ -205,16 +206,26 @@ namespace dd4hep {
             double unitValue = getUnitValue(spec.unit, description);
             
             if (spec.type == "I") {
-              // Integer parameter
-              int value = static_cast<int>(description.constant<double>(spec.constantName) / unitValue);
+              // Integer parameter - try double first, then long
+              int value;
+              try {
+                value = static_cast<int>(description.constantAsDouble(spec.constantName) / unitValue);
+              } catch (...) {
+                value = static_cast<int>(description.constantAsLong(spec.constantName) / static_cast<long>(unitValue));
+              }
               addIntParameterToRun(runParams, spec.outputName, value);
               info("  Added int parameter: %s = %d (from %s/%s)", 
                    spec.outputName.c_str(), value, spec.constantName.c_str(),
                    spec.unit.empty() ? "1" : spec.unit.c_str());
             }
             else if (spec.type == "F") {
-              // Float parameter
-              float value = static_cast<float>(description.constant<double>(spec.constantName) / unitValue);
+              // Float parameter - try double first, then long
+              float value;
+              try {
+                value = static_cast<float>(description.constantAsDouble(spec.constantName) / unitValue);
+              } catch (...) {
+                value = static_cast<float>(description.constantAsLong(spec.constantName) / unitValue);
+              }
               addFloatParameterToRun(runParams, spec.outputName, value);
               info("  Added float parameter: %s = %f (from %s/%s)", 
                    spec.outputName.c_str(), value, spec.constantName.c_str(),

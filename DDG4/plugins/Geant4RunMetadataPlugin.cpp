@@ -61,6 +61,9 @@ namespace dd4hep {
       /// Collection of configured parameters
       std::vector<Parameter> parameters;
       
+      /// Flag indicating whether action should auto-register
+      bool autoRegister = true;
+      
       /// Get the singleton instance for a given detector
       static RunMetadataStore& instance(Detector& detector) {
         static std::mutex s_mutex;
@@ -73,6 +76,29 @@ namespace dd4hep {
           return *store;
         }
         return *it->second;
+      }
+      
+      /// Try to auto-register the action if Geant4Kernel exists
+      static void tryAutoRegister(Detector& detector) {
+        try {
+          RunMetadataStore& store = instance(detector);
+          if (!store.autoRegister || store.parameters.empty()) {
+            return;
+          }
+          
+          Geant4Kernel* kernel = &Geant4Kernel::instance(detector);
+          if (kernel) {
+            Geant4RunMetadata* action = new Geant4RunMetadata(kernel, "Geant4RunMetadata");
+            kernel->registerGlobalAction(action);
+            kernel->runAction().adopt(action);
+            store.autoRegister = false;  // Only register once
+            
+            printout(INFO, "RunMetadata", 
+                     "++ Automatically registered Geant4RunMetadata action");
+          }
+        } catch (...) {
+          // Geant4Kernel doesn't exist yet or other error - will try again later
+        }
       }
       
       /// Destructor
@@ -126,7 +152,7 @@ namespace dd4hep {
      * and applies it to RunParameters or FileParameters extensions.
      *
      * The metadata is configured in the compact XML file using the DD4hep_RunMetadata plugin.
-     * This action is automatically applied during run initialization.
+     * No explicit action registration is required - the plugin handles everything.
      *
      * \author  M.Frank
      * \version 1.0
@@ -149,8 +175,7 @@ namespace dd4hep {
         RunMetadataStore& store = RunMetadataStore::instance(description);
         
         if (store.parameters.empty()) {
-          info("No metadata parameters configured");
-          return;
+          return;  // No metadata configured
         }
 
         Geant4Run* g4run = context()->run();
@@ -231,7 +256,7 @@ namespace  {
    *  The metadata is stored in the detector instance and can be
    *  accessed later by Geant4 output actions.
    *  
-   *  Usage in XML:
+   *  Usage in XML (compact file):
    *  <plugins>
    *    <plugin name="DD4hep_RunMetadata" type="runs">
    *      <parameter name="BeamEnergy_electron" type="float" 
@@ -249,6 +274,9 @@ namespace  {
    *  
    *  The value attribute is evaluated as a DD4hep expression, allowing
    *  references to constants and units (e.g., "250.0*GeV", "DetectorVersion").
+   *  
+   *  The Geant4RunMetadata action will be automatically created and registered
+   *  when Geant4 is initialized. No manual action registration is required.
    *  
    *  \author M.Frank
    *  \date   2024
@@ -326,11 +354,32 @@ namespace  {
     
     printout(INFO, "RunMetadata", "++ Registered %ld metadata parameters for branch '%s'", 
              count, branch.c_str());
+    
+    // Try to auto-register the Geant4 action if kernel exists
+    RunMetadataStore::tryAutoRegister(detector);
+    
     return 1;
   }
   
 }  // End anonymous namespace
 
+  /// Apply plugin to manually trigger action registration
+  /** This plugin can be called from Geant4 setup to ensure the action is registered.
+   *  Normally this happens automatically, but this can be called explicitly if needed.
+   *  
+   *  Usage in Geant4 XML (optional):
+   *  <plugins>
+   *    <plugin name="DD4hep_RunMetadata_apply"/>
+   *  </plugins>
+   */
+  long apply_run_metadata(Detector& detector, xml_h /* e */)   {
+    RunMetadataStore::tryAutoRegister(detector);
+    return 1;
+  }
+
+}  // End anonymous namespace
+
 // Factory declarations
 DECLARE_XML_PLUGIN(DD4hep_RunMetadata, configure_run_metadata)
+DECLARE_XML_PLUGIN(DD4hep_RunMetadata_apply, apply_run_metadata)
 DECLARE_GEANT4ACTION(Geant4RunMetadata)

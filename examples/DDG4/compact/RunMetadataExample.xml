@@ -2,32 +2,17 @@
 <!--
   Example Geant4 simulation configuration using run metadata
   
-  This example shows how to use the Geant4RunMetadata action which reads
-  metadata configuration from the detector description (set up by the
-  DD4hep_RunMetadata plugin) and applies it to the output files.
-  
   The metadata is configured in the compact detector XML file using the
-  DD4hep_RunMetadata plugin. This Geant4 setup file just needs to include
-  the Geant4RunMetadata action in the RunAction phase.
+  DD4hep_RunMetadata plugin. The Geant4RunMetadata action is automatically
+  registered when the plugin is used, so no manual action registration is needed.
+  
+  This file demonstrates a basic Geant4 setup. The metadata will be automatically
+  applied to output files when using EDM4hep, LCIO, or ROOT output.
 -->
 <geant4_setup>
   
   <!-- Kernel parameters -->
   <kernel UI="" NumEvents="10" />
-  
-  <!-- List of globally known actions -->
-  <actions>
-    <!-- Action to apply metadata from detector description -->
-    <action name="Geant4RunMetadata/RunMetadata"/>
-  </actions>
-  
-  <!-- List of known phases -->
-  <phases>
-    <phase type="RunAction/begin">
-      <!-- Add the metadata action to automatically apply configured metadata -->
-      <action name="RunMetadata"/>
-    </phase>
-  </phases>
   
   <!-- Example generator and output configuration -->
   <sequences>

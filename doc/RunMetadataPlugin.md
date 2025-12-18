@@ -42,27 +42,16 @@ In your detector description XML file, configure metadata using the `DD4hep_RunM
 </lccdd>
 ```
 
-### 2. Enable Metadata Action in Geant4
+### 2. Run Your Simulation
 
-In your Geant4 simulation XML configuration, add the `Geant4RunMetadata` action:
+That's it! The metadata will be automatically applied to your output files.
 
-```xml
-<geant4_setup>
-  <actions>
-    <action name="Geant4RunMetadata/RunMetadata"/>
-  </actions>
-  
-  <phases>
-    <phase type="RunAction/begin">
-      <action name="RunMetadata"/>
-    </phase>
-  </phases>
-</geant4_setup>
-```
+The plugin automatically registers a Geant4 action to apply the metadata during simulation.
+No manual action registration is required.
 
-### 3. Python Configuration (Alternative)
+### 3. Python Usage (Optional)
 
-You can also configure this in Python:
+If using Python, simply load the detector and run:
 
 ```python
 import DDG4
@@ -74,7 +63,15 @@ kernel.loadGeometry("detector.xml")
 # Setup Geant4
 geant4 = DDG4.Geant4(kernel)
 
-# Add metadata action
+# Metadata action is automatically registered - no manual setup needed
+# Just run your simulation normally
+geant4.execute()
+```
+
+If you need to manually register the action for some reason:
+
+```python
+# Manual registration (usually not needed)
 metadata = DDG4.Action(kernel, 'Geant4RunMetadata/RunMetadata')
 geant4.runAction().adopt(metadata)
 ```
@@ -231,20 +228,7 @@ See the following files for complete examples:
 </lccdd>
 ```
 
-```xml
-<!-- simulation.xml -->
-<geant4_setup>
-  <actions>
-    <action name="Geant4RunMetadata/RunMetadata"/>
-  </actions>
-  
-  <phases>
-    <phase type="RunAction/begin">
-      <action name="RunMetadata"/>
-    </phase>
-  </phases>
-</geant4_setup>
-```
+No Geant4 XML configuration needed - the action is automatically registered!
 
 ## Error Handling
 

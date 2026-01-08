@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Example Geant4 simulation configuration using run metadata
+  
+  The metadata is configured in the compact detector XML file using the
+  DD4hep_RunMetadata plugin. The Geant4RunMetadata action is automatically
+  registered when the plugin is used, so no manual action registration is needed.
+  
+  This file demonstrates a basic Geant4 setup. The metadata will be automatically
+  applied to output files when using EDM4hep, LCIO, or ROOT output.
+-->
+<geant4_setup>
+  
+  <!-- Kernel parameters -->
+  <kernel UI="" NumEvents="10" />
+  
+  <!-- Example generator and output configuration -->
+  <sequences>
+    <sequence name="Geant4GeneratorActionSequence/GeneratorAction">
+      <action name="Geant4ParticleGun/Gun">
+        <properties energy="10*GeV" particle="'e-'" multiplicity="1"/>
+      </action>
+      <action name="Geant4PrimaryHandler/PrimaryHandler"/>
+    </sequence>
+    
+    <sequence name="Geant4EventActionSequence/EventAction">
+      <!-- Example: EDM4hep output will include the metadata -->
+      <!-- <action name="Geant4Output2EDM4hep/EDM4hepOutput"> -->
+      <!--   <properties Output="output.root"/> -->
+      <!-- </action> -->
+    </sequence>
+  </sequences>
+  
+</geant4_setup>
